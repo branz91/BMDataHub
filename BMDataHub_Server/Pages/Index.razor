@@ -1,0 +1,21 @@
+﻿@page "/"
+
+<RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+<RadzenText TextStyle="TextStyle.H3" style="color: var(--rz-primary-dark);" class="m-5"><strong>Bhakti Marga</strong><span style="color: var(--rz-secondary-dark);"> Data Hub</span></RadzenText>
+
+<AuthorizeView>
+    <Authorized>
+        <RadzenText TextStyle="TextStyle.H2" style="color: var(--rz-primary);"><strong>Jai Gurudev </strong><span style="color: var(--rz-secondary);"> @context.User.Identity.Name</span></RadzenText>
+    </Authorized>
+    <NotAuthorized>
+        <RadzenText TextStyle="TextStyle.H2" style="color: var(--rz-secondary);"><strong>Jai Gurudev</strong></RadzenText>
+        <a href="Identity/Account/Register">Register</a>
+        <a href="Identity/Account/Login">Login</a>
+    </NotAuthorized>
+
+</AuthorizeView>
+
+
+<RadzenText TextStyle="TextStyle.Body1" class="m-5">Made With ❤️ <RadzenText TextStyle="TextStyle.Overline">By Bhakti Marga Team</RadzenText> </RadzenText>
+
+</RadzenStack>

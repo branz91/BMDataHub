@@ -1,0 +1,326 @@
+﻿@page "/Events-list-2"
+@using DataAccess.Data;
+@using Microsoft.EntityFrameworkCore
+@using System.Linq
+
+@using Models
+@using Buisness.Repository.IRepository
+@inject ICoursesRepository CoursesRepository
+@inject NavigationManager NavigationManager
+
+@inject DialogService DialogService
+
+@* @inherits ApplicationDBContext dbContext
+ *@
+
+<div class="row mt-3">
+
+    <div class="col-8">
+        <h4 class="card-title text-info">Events List</h4>
+    </div>
+    @if (Courses1.Any())
+    {
+
+        <div class="col-3 mb-5">
+            <RadzenButton Text="Reset" Click="@Reset" />
+
+        </div>
+
+        <RadzenDataGrid @ref="ordersGrid" AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand" AllowPaging="true" PageSize="5" AllowSorting="true"
+                        Data="@Courses1" TItem="CoursesDTO">
+            <Columns>
+                <RadzenDataGridColumn Width="50px" TItem="CoursesDTO" Title="#" Filterable="false" Sortable="false" TextAlign="TextAlign.Center">
+                  
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CoursesDTO" Property="lastname" Title="Name">
+                    <Template Context="student">
+                        @{
+                            int avatarNumber = new Random().Next(1, 21); // Genera un numero casuale per l'avatar
+                            string avatarPath = $"/Public/avatars/{avatarNumber}.png"; // Crea il percorso
+                        }
+                        <RadzenImage Path="@avatarPath" style="width: 40px; height: 40px; border-radius: 8px; margin-right: 8px; float: left;" />
+                        <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0">@student.firstname @student.lastname</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption">@student.ProductId</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+               
+                <RadzenDataGridColumn TItem="CoursesDTO" Property="country" Title="ShipCountry" />
+                <RadzenDataGridColumn Width="160px" TItem="CoursesDTO" Property="OrderID" Title="Order Details">
+                    <Template Context="data">
+@*                         <radzenbutton buttonstyle="buttonstyle.info" variant="variant.flat" shade="shade.lighter" icon="info" class="m-1" click=@(() => openorder(data.productid)) text="@data.productid.tostring()" />
+ *@                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+      
+    }
+    else
+    {
+        <p>No Courses available.</p>
+    }
+</div>
+
+<RadzenButton Click="@ButtonClicked" Text="Hi"></RadzenButton>
+
+
+@code {
+
+    async Task ButtonClicked()
+    {
+    }
+
+    string text = "Hi";
+    RadzenDataGrid<CoursesDTO> ordersGrid;
+    int count;
+    bool isLoading = false;
+
+
+    private IEnumerable<CoursesDTO> Courses1 { set; get; } = new List<CoursesDTO>();
+
+    // async Task OpenOrder(int orderId)
+    // {
+    //     await DialogService.OpenAsync<DialogCardPage>($"Order {orderId}",
+    //           new Dictionary<string, object>() { { "OrderID", orderId } },
+    //           new DialogOptions() { Width = "700px", Height = "520px" });
+    // }
+
+    protected override void OnInitialized()
+    {
+        Random rnd = new Random();
+      
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        try
+        {
+            Courses1 = await CoursesRepository.GetAllCourses();
+
+            // Questo è particolarmente importante se la tua chiamata dati è asincrona e
+            // i dati non saranno disponibili immediatamente.
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Qui dovresti gestire eventuali eccezioni, ad esempio registrandole o mostrando
+            // un messaggio all'utente nell'interfaccia utente.
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+    }
+
+    async Task OnSelectedTitlesChange(object value)
+    {
+        if (Courses1 != null && !Courses1.Any())
+        {
+            Courses1 = null;
+        }
+
+        await ordersGrid.FirstPage();
+    }
+
+    async Task Reset()
+    {
+        ordersGrid.Reset(true);
+        await ordersGrid.FirstPage(true);
+    }
+
+    private void ViewStudents()
+    {
+        NavigationManager.NavigateTo("Events-list/Students");
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+
+        await Task.Yield();
+
+        // Assumo che tu abbia già un IEnumerable<CoursesDTO> o simile chiamato 'coursesData'
+        var query = Courses1;
+
+        if (!string.IsNullOrEmpty(args.Filter))
+        {
+            // Esempio: filtro per la proprietà 'Name'
+            query = query.Where(c => c.firstname.Contains(args.Filter));
+        }
+
+
+        if (!string.IsNullOrEmpty(args.OrderBy))
+        {
+            var orderBy = args.OrderBy;
+            // Esempio: ordinamento per una proprietà 'Name'
+            if (orderBy == "firstname")
+            {
+                query = query.OrderBy(x => x.firstname);
+            }
+            // Aggiungi ulteriori controlli per altre proprietà, se necessario
+        }
+
+        // Conteggio totale degli elementi
+        count = query.Count();
+
+        // Esegui la paginazione
+        // Nota: args.Skip e args.Top dovrebbero essere già valori int
+        Courses1 = query.Skip(args.Skip.Value).Take(args.Top.Value).ToList();
+
+        isLoading = false;
+    }
+
+
+}
+
+@* 
+            @page "/Events-list/Fees"
+@using Models
+@using Buisness.Repository.IRepository
+@inject ICoursesRepository CoursesRepository
+@inject NavigationManager NavigationManager
+@using System.Linq.Dynamic.Core
+
+
+<div class="row mt-3">
+
+    <div class="col-8">
+        <h4 class="card-title text-info">Fees</h4>
+    </div>
+    @if (Courses1.Any())
+    {
+        <div class="col-3 mb-5">
+            <RadzenButton Text="Reset" Click="@Reset" />
+            <RadzenLink Text="Back to Events" Path="/Events-list"></RadzenLink>
+        </div>
+        <RadzenDataGrid style="height: auto; width:2000px !important" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced"
+                        AllowGrouping="true" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                        Data="@Courses1" TItem="CoursesDTO" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" ShowPagingSummary="true"
+                        IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading">
+            <Columns>
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="CreatedAt" Title="CreatedAt" Width="100px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="OrderName" Title="OrderName" Width="200px" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="ProductId" Title="ProductId" Width="220px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="LineItemTitle" Title="LineItemTitle" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="LineItemId" Title="LineItemId" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="firstname" Title="firstname" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="lastname" Title="lastname" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="email" Title="email" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="newcomer" Title="newcomer" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="country" Title="country" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="sku" Title="sku" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="LineItemPrice" Title="LineItemPrice" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="Quantity" Title="Quantity" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="Refunded" Title="Refunded" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="SalesChannel" Title="SalesChannel" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="DateTimeAdded" Title="DateTimeAdded" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="Store" Title="Store" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="consent" Title="consent" Width="200px" TextAlign="TextAlign.Center" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+    else
+    {
+        <p>No Courses available.</p>
+    }
+</div>
+
+
+
+@code {
+    string text = "Hi";
+    RadzenDataGrid<CoursesDTO> grid;
+    int count;
+
+
+    private IEnumerable<CoursesDTO> Courses1 { set; get; } = new List<CoursesDTO>();
+
+
+    bool isLoading = false;
+
+    async Task ShowLoading()
+    {
+        isLoading = true;
+
+        await Task.Yield();
+
+        isLoading = false;
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await ShowLoading();
+
+        try
+        {
+            Courses1 = await CoursesRepository.GetAllCourses();
+
+            // Questo è particolarmente importante se la tua chiamata dati è asincrona e
+            // i dati non saranno disponibili immediatamente.
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Qui dovresti gestire eventuali eccezioni, ad esempio registrandole o mostrando
+            // un messaggio all'utente nell'interfaccia utente.
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+    }
+
+    async Task Reset()
+    {
+        grid.Reset(true);
+        await grid.FirstPage(true);
+    }
+
+
+
+
+} *@
+
+
+            @* <div class="row mt-3">
+
+    <div class="col-8">
+        <h4 class="card-title text-info">Fees</h4>
+    </div>
+    @if (Courses1.Any())
+    {
+        <div class="col-3 mb-5">
+            <RadzenButton Text="Reset" Click="@Reset" />
+            <RadzenLink Text="Back to Events" Path="/Events-list"></RadzenLink>
+        </div>
+        <RadzenDataGrid style="height: auto; width:2000px !important" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced"
+                        AllowGrouping="true" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                        Data="@Courses1" TItem="CoursesDTO" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" ShowPagingSummary="true"
+                        IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading">
+            <Columns>
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="CreatedAt" Title="CreatedAt" Width="100px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="OrderName" Title="OrderName" Width="200px" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="ProductId" Title="ProductId" Width="220px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="LineItemTitle" Title="LineItemTitle" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="LineItemId" Title="LineItemId" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="firstname" Title="firstname" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="lastname" Title="lastname" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="email" Title="email" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="newcomer" Title="newcomer" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="country" Title="country" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="sku" Title="sku" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="LineItemPrice" Title="LineItemPrice" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="Quantity" Title="Quantity" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="Refunded" Title="Refunded" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="SalesChannel" Title="SalesChannel" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="DateTimeAdded" Title="DateTimeAdded" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="Store" Title="Store" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO"   Sortable="false" Filterable="false" Property="consent" Title="consent" Width="200px" TextAlign="TextAlign.Center" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+    else
+    {
+        <p>No Courses available.</p>
+    }
+</div> *@

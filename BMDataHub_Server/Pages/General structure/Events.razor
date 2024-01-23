@@ -1,0 +1,452 @@
+﻿@page "/Events-list"
+@page "/Events-list/{ThID:int}"
+@page "/Events-list/{ThID:int}/{TitleTh}"
+
+
+@using DataAccess.Data;
+@using Microsoft.EntityFrameworkCore;
+@using Models
+@using Buisness.Repository.IRepository
+@using Buisness.ApiService;
+
+@inject ICoursesRepository CoursesRepository
+@inject IFeesRepository FeesRepository
+@inject IContactsRepository TeachersRepository
+
+@inject NavigationManager NavigationManager
+@inject DialogService ds
+@inject NotificationService NotificationService
+@inject DataUpdateService DataUpdateService
+
+@attribute [Authorize(Roles = Common.SD.Role_Admin)]
+
+@* @inherits ApplicationDBContext dbContext
+ *@
+
+
+    <div class="col-8">
+        <RadzenText TextStyle="TextStyle.H4" style="color: var(--rz-primary-dark);"><strong>Courses:</strong><span style="color: var(--rz-secondary);"> @Title</span></RadzenText>
+    </div>
+    <div class="col-3 mb-3">
+        @if (TitleTh != null && TitleTh != "All Countries")
+        {
+            <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to Teachers" Click="@(() => NavigateTo($"/Contacts-list/{Country}"))" Style="margin-left:5px"></RadzenButton>
+        }
+        else
+        {
+            <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to Teachers" Click="@(() => NavigateTo($"/Contacts-list"))" Style="margin-left:5px"></RadzenButton>
+
+        }
+
+        @*    <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to Teachers" Click="@(() => NavigateTo("/Contacts-list"))"></RadzenButton>
+        <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="View All Students" Click="@ReloadPage" Style="margin-left:5px"></RadzenButton> *@
+
+    </div>
+
+    @if (Courses1.Any())
+    {
+
+
+
+        <RadzenDataGrid style="height: auto; z-index: 1;" Data="@Courses1" AllowPaging="true" PageSize="25" PagerHorizontalAlign="HorizontalAlign.Center"  ColumnWidth="200px" TItem="CoursesDTO">
+            <Columns>
+@*                 <RadzenDataGridColumn TItem="CoursesDTO" Frozen="true" Sortable="false" Filterable="false" Property="DateTimeAdded" Title="DateTimeAdded" Width="200px" MinWidth="150" TextAlign="TextAlign.Center" />
+
+            *@                <RadzenDataGridColumn TItem="CoursesDTO"  Sortable="false" Filterable="false" Property="LineItemTitle" Title="LineItemTitle" MinWidth="400px" TextAlign="TextAlign.Left">
+                    <Template Context="data">
+                       <RadzenText TextStyle="TextStyle.Body2" class="rz-text-capitalize" Style="margin-top:7px"> @data.LineItemTitle.ToLower()</RadzenText> 
+                   </Template>
+                </RadzenDataGridColumn>
+               @*  <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="LineItemPrice" Title="LineItemPrice" Width="100px" TextAlign="TextAlign.Center" >
+                 <Template Context="data">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0">@data.LineItemPrice €</RadzenText>
+                </Template>
+            </RadzenDataGridColumn> *@
+                    <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="TotalStudents" Title="Total Students"  TextAlign="TextAlign.Center" />
+
+                    <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="TotalLineItemPrice" Title="Total Income" TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.TotalLineItemPrice)
+
+                </Template>
+            </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Fees Amount" TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.FeesAmount)
+
+
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Sharing Teacher" TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(data.TotalLineItemPrice - data.FeesAmount, 1, 0.0))
+
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Sharing Country"TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(data.TotalLineItemPrice - data.FeesAmount, 3, 0.0))
+
+
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Sharing BM Int." TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(data.TotalLineItemPrice - data.FeesAmount, 2, 0.0))
+
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Paid"  TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        @if (data.Paid == true)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" style="color: var(--rz-primary-dark);"><strong style="color:limegreen">Paid</strong> </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" style="color: var(--rz-primary-dark);"><strong style="color: var(--rz-secondary);">Not Paid</strong> </RadzenText>
+                        }
+
+                    </Template>
+                </RadzenDataGridColumn>
+
+                @*    <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Fees" Width="100px" TextAlign="TextAlign.Center" >
+            <Template Context="data">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0" Style="color: red;">
+            @((data.Rent ?? 0) + (data.Transport ?? 0) + (data.OtherFees ?? 0) + (data.Food ?? 0)) €
+            </RadzenText>
+
+            </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Your Income" Width="100px" TextAlign="TextAlign.Center">
+            <Template Context="data">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0" Style="color: green;">
+            @(
+            SharingRule(
+            (data.TotalLineItemPrice ?? 0) - (data.Rent ?? 0) - (data.Transport ?? 0) - (data.OtherFees ?? 0) - (data.Food ?? 0),
+            "Teacher"
+            )
+            ) €
+            </RadzenText>
+            </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Country Income" Width="100px" TextAlign="TextAlign.Center">
+            <Template Context="data">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0" >
+            @(
+            SharingRule(
+            (data.TotalLineItemPrice ?? 0) - (data.Rent ?? 0) - (data.Transport ?? 0) - (data.OtherFees ?? 0) - (data.Food ?? 0),
+            "BM"
+            )
+            ) €
+            </RadzenText>
+            </Template>
+            </RadzenDataGridColumn> *@
+
+
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Title="Actions" TextAlign="TextAlign.Left" MinWidth="250px">
+                    <Template Context="dataItem">
+                        <RadzenButton Shade="Shade.Default" ButtonStyle="ButtonStyle.Primary" class="rz-border-radius-6" Text="Students" Click="@(() => NavigateTo($"/Students-list/{dataItem.ProductId}/{Title}"))" Style="margin-right: 8px;"></RadzenButton>
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Secondary" class="rz-border-radius-6" Text="Fees" Click="@(() => NavigateTo($"/Events-list/Fees/{dataItem.ProductId}"))"></RadzenButton>
+                        @*                         <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Text="update" Click="@UpdateCoursesWithNewFees"></RadzenButton>
+                    *@
+                    </Template>
+                </RadzenDataGridColumn>
+
+              @*   <RadzenDataGridColumn TItem="CoursesDTO"  Sortable="false" Filterable="false" Property="Store" Title="Store" Width="100px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Sortable="false" Filterable="false" Property="sku" Title="sku" Width="150px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="CoursesDTO" Frozen="false" Sortable="false" Filterable="false" Property="ProductId" Title="ProductId" Width="220px" TextAlign="TextAlign.Center" /> *@
+
+            </Columns>
+            
+        </RadzenDataGrid>
+    }
+    else
+    {
+        <p>No Courses available.</p>
+    }
+
+<div class="col-3 mb-3">
+    @* ... Altre parti del layout ... *@
+    <RadzenButton Text="Update Data" Click="OnUpdateDataClicked"></RadzenButton>
+           <RadzenButton Text="Assign Random teacher" Click="HandleTeacherIdUpsert"></RadzenButton>
+
+</div>
+
+@* <RadzenButton Click="@ButtonClicked" Text="Hi"></RadzenButton> *@
+
+
+@code {
+
+    // async Task ButtonClicked()
+    // {
+    //     var result = await ds.Confirm("Are you sure?");
+    // }
+
+
+    string text = "Hi";
+    RadzenDataGrid<CoursesDTO> grid;
+    int count;
+    bool isLoading = false;
+    public int TotalStudents { get; set; }
+    private string Country { get; set; }
+    private string Title = " All";
+
+    [Parameter]
+    public string? TitleTh { get; set; }
+
+    [Parameter]
+    public int? ThID { get; set; }
+    private IEnumerable<CoursesDTO> Courses1 { set; get; } = new List<CoursesDTO>();
+    private IEnumerable<CoursesDTO> Courses2 { set; get; } = new List<CoursesDTO>();
+
+
+    private double? IncomeandFees { get; set; } = 0;
+    private int? teacherIdInput { get; set; } = 2252651;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var allFees = await FeesRepository.GetAllFees();
+            var allCourses = await CoursesRepository.GetAllCourses();
+
+
+            if (ThID > 0)
+            {
+
+
+                // Filtra per ProductId
+                var tempAllStudents = allCourses.Where(course => course.IdTeacher == ThID).ToList();
+                var groupedCourses = tempAllStudents.GroupBy(course => course.ProductId);
+                var teacherCourse = await TeachersRepository.TeacherById(ThID);
+
+                var tempCourses = new List<CoursesDTO>();
+
+                foreach (var group in groupedCourses)
+                {
+                    var exampleCourse = group.First();
+
+                    var newCourse = new CoursesDTO
+                        {
+                            // Assumi che LineItemTitle, CreatedAt, OrderName siano proprietà di CoursesDTO
+                            LineItemTitle = exampleCourse.LineItemTitle,
+
+                            ProductId = exampleCourse.ProductId,
+                            LineItemId = exampleCourse.LineItemId,
+                            sku = exampleCourse.sku,
+                            LineItemPrice = exampleCourse.LineItemPrice,
+                            DateTimeAdded = exampleCourse.DateTimeAdded,
+                            Store = exampleCourse.Store,
+                            TotalLineItemPrice = group.Sum(course => course.LineItemPrice),
+                            TotalStudents = group.Count(),
+                            FeesAmount = allFees.Where(x => x.ProductId == exampleCourse.ProductId).Sum(fee => fee.Price),
+                            Paid = exampleCourse.Paid
+
+
+                            // Altri campi da copiare o inizializzare
+                        };
+
+                    tempCourses.Add(newCourse);
+                }
+
+                // Assegna la lista temporanea a Courses1
+                Courses1 = tempCourses;
+
+                Title =" "+ teacherCourse.FirstOrDefault().spiritual_name + " (" + teacherCourse.FirstOrDefault().firstname +" "+ teacherCourse.FirstOrDefault().lastname + ")";
+                Country = teacherCourse.FirstOrDefault().country_calculated;
+                // Aggiorna lo stato del componente
+                StateHasChanged();
+            }
+            else
+            {
+                Courses2 = allCourses.Where(course => course.ProductId == 8194895446333).ToList();
+
+                // Raggruppa i corsi per ProductId
+                var groupedCourses = allCourses.GroupBy(course => course.ProductId);
+
+                // Crea una lista temporanea
+                var tempCourses = new List<CoursesDTO>();
+
+                foreach (var group in groupedCourses)
+                {
+                    var exampleCourse = group.First();
+
+                    var newCourse = new CoursesDTO
+                        {
+                            // Assumi che LineItemTitle, CreatedAt, OrderName siano proprietà di CoursesDTO
+                            LineItemTitle = exampleCourse.LineItemTitle,
+
+                            ProductId = exampleCourse.ProductId,
+                            LineItemId = exampleCourse.LineItemId,
+                            sku = exampleCourse.sku,
+                            LineItemPrice = exampleCourse.LineItemPrice,
+                            DateTimeAdded = exampleCourse.DateTimeAdded,
+                            Store = exampleCourse.Store,
+                            TotalLineItemPrice = group.Sum(course => course.LineItemPrice),
+                            TotalStudents = group.Count(),
+                            FeesAmount = allFees.Where(x => x.ProductId == exampleCourse.ProductId).Sum(fee => fee.Price),
+                            Paid = exampleCourse.Paid
+
+                            // Altri campi da copiare o inizializzare
+                        };
+
+                    tempCourses.Add(newCourse);
+                }
+
+                // Assegna la lista temporanea a Courses1
+                Courses1 = tempCourses;
+
+                StateHasChanged();
+            }
+           
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+    }
+
+    async Task OnSelectedTitlesChange(object value)
+    {
+        if (Courses1 != null && !Courses1.Any())
+        {
+            Courses1 = null;
+        }
+
+        await grid.FirstPage();
+    }
+
+    private async Task OnUpdateDataClicked()
+    {
+        try
+        {
+            
+            // Chiama il metodo di aggiornamento fornito da DataUpdateService
+            await DataUpdateService.UpdateCoursesData();
+
+        }
+        catch (Exception ex)
+        {
+            // Gestione degli errori
+            // Log dell'errore e notifica all'utente che si è verificato un errore
+            Console.WriteLine($"Errore durante l'aggiornamento dei dati: {ex.Message}");
+
+        
+        }
+    }
+
+
+    private void ViewStudents()
+    {
+        NavigationManager.NavigateTo("Events-list/Students");
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+
+        await Task.Yield();
+
+        // Assumo che tu abbia già un IEnumerable<CoursesDTO> o simile chiamato 'coursesData'
+        var query = Courses1;
+
+        if (!string.IsNullOrEmpty(args.Filter))
+        {
+            // Esempio: filtro per la proprietà 'Name'
+            query = query.Where(c => c.firstname.Contains(args.Filter));
+        }
+
+
+        if (!string.IsNullOrEmpty(args.OrderBy))
+        {
+            var orderBy = args.OrderBy;
+            // Esempio: ordinamento per una proprietà 'Name'
+            if (orderBy == "firstname")
+            {
+                query = query.OrderBy(x => x.firstname);
+            }
+            // Aggiungi ulteriori controlli per altre proprietà, se necessario
+        }
+
+        // Conteggio totale degli elementi
+        count = query.Count();
+
+        // Esegui la paginazione
+        // Nota: args.Skip e args.Top dovrebbero essere già valori int
+        Courses1 = query.Skip(args.Skip.Value).Take(args.Top.Value).ToList();
+
+        isLoading = false;
+    }
+    
+
+    private void NavigateTo(string url)
+    {
+        // Assicurati di avere NavigationManager iniettato nel tuo componente
+        NavigationManager.NavigateTo(url);
+    }
+
+    public double? CalcolaPercentuale(double? numero, int opzione, double? tax)
+    {
+
+        switch (opzione)
+        {
+            case 1:
+                return numero * 0.50 - numero * 0.50 * (tax / 100);
+            case 2:
+                return numero * 0.0 - numero * 0.0 * (tax / 100);
+            case 3:
+                return numero * 0.50 - numero * 0.50 * (tax / 100);
+            case 4:
+                return tax * 10;
+            default:
+                throw new ArgumentException("Opzione non valida. Deve essere 1, 2 o 3.");
+        }
+    }
+
+
+    private async Task HandleTeacherIdUpsert()
+    {
+        try
+        {
+            foreach (var course in Courses2)
+            {
+                if (course.ProductId <= 0)
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Invalid course ID");
+                    continue; // Passa al prossimo corso nella lista
+                }
+               
+                    var updatedCourse = await CoursesRepository.SetTeacherId(course.ProductId, course);
+
+                    if (updatedCourse == null)
+                    {
+                        NotificationService.Notify(NotificationSeverity.Error, $"Failed to update fees for course ID: {course.ProductId}");
+                        continue;
+                    }
+                
+
+
+            }
+
+            // Notifica di successo generale dopo l'aggiornamento di tutti i corsi
+            NotificationService.Notify(NotificationSeverity.Success, $"All fees updated successfully {Courses2.Count()}");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, $"Error updating fees: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateCoursesWithNewFees()
+    {
+        foreach (var course in Courses2)
+        {
+            course.IdTeacher = teacherIdInput;
+        }
+
+        await HandleTeacherIdUpsert();
+    }
+
+}

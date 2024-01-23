@@ -1,0 +1,212 @@
+﻿@page "/Waiting"
+
+@namespace BMDataHub_Server.Pages.Contacts
+@using Models
+@attribute [Authorize(Roles = Common.SD.Role_Admin + "," + Common.SD.Role_CountryCoord + "," + Common.SD.Role_Teacher)]
+
+
+
+
+    <div class="col-8">
+    <RadzenText TextStyle="TextStyle.H4" style="color: var(--rz-primary-dark);"><strong>Become a Devotee:</strong><span style="color: var(--rz-secondary);"> @Title</span></RadzenText>
+
+    </div>
+
+ 
+    @if (Contacts1.Any())
+    {
+
+
+        <RadzenDataGrid style="height: auto, " Data="@Contacts1" AllowPaging="true" PageSize="100" PagerHorizontalAlign="HorizontalAlign.Center" TItem="AllContactsListDTO" ColumnWidth="200px">
+            <Columns>
+                @{
+                    Random rnd = new Random();
+                }
+            <RadzenDataGridColumn TItem="AllContactsListDTO" Sortable="false" Filterable="false" Property="country_calculated" Title="Country" Width="100px" TextAlign="TextAlign.Left">
+                    <Template Context="data">
+                    <RadzenText TextStyle="TextStyle.Body2" class="mb-0">@data.CountryCalculated</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" class="mb-0">@data.City</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" class="mb-0">@data.Zip</RadzenText>
+                       
+                    </Template>
+                </RadzenDataGridColumn>
+
+
+                <RadzenDataGridColumn TItem="AllContactsListDTO" Property="Lastname" Title="Name">
+                    <Template Context="data">
+                        @{
+                            int avatarNumber = new Random().Next(1, 21); // Genera un numero casuale per l'avatar
+                            string avatarPath = $"/Public/avatars/{avatarNumber}.png"; // Crea il percorso
+                        }
+                        <RadzenImage Path="@avatarPath" style="width: 55px; height: 55px; border-radius: 8px; margin-right: 8px; float: left;" />
+                        <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0">@data.Firstname @data.Lastname</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0">@data.SpiritualName</RadzenText>
+@*                         <RadzenText TextStyle="TextStyle.Overline" class="mb-0">@data.date_of_birth_date_picker</RadzenText>
+ *@
+                    </Template>
+                </RadzenDataGridColumn>
+
+
+
+                <RadzenDataGridColumn TItem="AllContactsListDTO" Sortable="false" Filterable="false" Property="Phone" Title="Contacts" Width="220px" TextAlign="TextAlign.Center">
+                    <Template Context="data">
+                        <RadzenText TextStyle="TextStyle.Body2" class="mb-0">@data.Phone</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" class="mb-0">@data.Email</RadzenText>
+                        
+                    </Template>
+                </RadzenDataGridColumn>
+
+               
+               
+              @*   <RadzenDataGridColumn TItem="ContactsDTO" Frozen="false" Sortable="false" Filterable="false" Property="verified_art_teacher" Title="Verified Art Teacher" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="ContactsDTO" Frozen="false" Sortable="false" Filterable="false" Property="verified_knowledge_teachers" Title="Verified Knowledge Teacher" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="ContactsDTO" Frozen="false" Sortable="false" Filterable="false" Property="verified_music" Title="Verified Music" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="ContactsDTO" Frozen="false" Sortable="false" Filterable="false" Property="verified_rituals_teacher" Title="Verified Rituals Teacher" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="ContactsDTO" Frozen="false" Sortable="false" Filterable="false" Property="verified_yoga_and_meditation_teachers" Title="Verified Yoga and Meditation Teacher" Width="200px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="ContactsDTO" Frozen="false" Sortable="false" Filterable="false" Property="verified_aky_teacher" Title="Verified AKY Teacher" Width="200px" TextAlign="TextAlign.Center" /> *@
+          @*   <RadzenDataGridColumn TItem="AllContactsListDTO" Sortable="false" Filterable="false" Title="Actions" TextAlign="TextAlign.Left">
+                        <Template Context="dataItem">
+                            <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Secondary" Text="Courses" class="rz-border-radius-6" Click="@(() => NavigateTo($"/Events-list/{dataItem.id}/{Title}"))" Style="margin-right: 8px;"></RadzenButton>
+                      
+                        </Template>
+                    </RadzenDataGridColumn> *@
+            </Columns>
+        </RadzenDataGrid>
+    }
+    else
+    {
+        <p>No contacts available.</p>
+    }
+
+
+@* <div class="row mt-4">
+    <div class="col-8">
+        <h4 class="card-title text-info">Teachers List</h4>
+    </div>
+    <div class="col-3 offset-1">
+        <NavLink href="Contacts-list/create" class="btn btn-info form-control">Add New Contact</NavLink>
+    </div>
+</div>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>email</th>
+                        <th>lastname</th>
+                        <th>firstname</th>
+                        <th>spiritual_name</th>
+                        <th>country_of_residence</th>
+                        <th>country_calculated</th>
+                        <th>zip</th>
+                        <th>profession</th>
+                        <th>city</th>
+                        <th>hs_language</th>
+                        <th>do_you_speak_english_</th>
+                        <th>comments</th>
+                        <th>gender__</th>
+                        <th>date_of_birth_date_picker</th>
+                        <th>mobilephone</th>
+                        <th>phone</th>
+                        <th>verified_art_teacher</th>
+                        <th>verified_knowledge_teachers</th>
+                        <th>verified_music</th>
+                        <th>verified_rituals_teacher</th>
+                        <th>verified_yoga_and_meditation_teachers</th>
+                        <th>verified_aky_teacher</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Contacts1.Any())
+                    {
+                        foreach (var contact in Contacts1)
+                        {
+                            <tr>
+                                <td>
+                                    @contact.email
+                                </td>
+                                <td>
+                                    @contact.lastname
+                                </td>
+                                <td>
+                                    @contact.firstname
+                                </td>
+                                <td>
+                                    @contact.spiritual_name
+                                </td>
+                                <td>
+                                    @contact.country_of_residence
+                                </td>
+                                <td>
+                                    @contact.country_calculated
+                                </td>
+                                <td>
+                                    @contact.zip
+                                </td>
+                                <td>
+                                    @contact.profession
+                                </td>
+                                <td>
+                                    @contact.city 
+                                </td>
+                                <td>
+                                    @contact.hs_language 
+                                </td>
+                                <td>
+                                    @contact.do_you_speak_english_ 
+                                </td>
+                                <td>
+                                    @contact.comments 
+                                </td>
+                                <td>
+                                    @contact.gender__ 
+                                </td>
+                                <td>
+                                    @contact.date_of_birth_date_picker 
+                                </td>
+                                <td>
+                                    @contact.mobilephone 
+                                </td>
+                                <td>
+                                    @contact.phone
+                                </td>
+                                <td>
+                                    @contact.verified_art_teacher
+                                </td>
+                                <td>
+                                    @contact.verified_knowledge_teachers 
+                                </td>
+                                <td>
+                                    @contact.verified_music 
+                                </td>
+                                <td>
+                                    @contact.verified_rituals_teacher 
+                                </td>
+                                <td>
+                                    @contact.verified_yoga_and_meditation_teachers
+                                </td>
+                                <td>
+                                    @contact.verified_aky_teacher 
+                                </td>
+                                <td>
+@*                                     <NavLink href="@($"hotel-amenity/edit/{contact.id}")" class="btn btn-primary">Edit</NavLink>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5">No Rcord Found</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <RadzenButton Text="Hi"></RadzenButton>
+        </div>
+    </div>
+</div> *@
+
+

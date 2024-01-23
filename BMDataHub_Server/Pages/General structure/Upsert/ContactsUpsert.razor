@@ -1,0 +1,275 @@
+﻿@page "/Contacts-list/create"
+
+@using Models
+@using Microsoft.AspNetCore.Components;
+@using System.IO;
+@using System.Text;
+@using System.Collections.Generic;
+@using CsvHelper;
+@using CsvHelper.Configuration;
+@using System.Globalization;
+@using Buisness.Repository.IRepository;
+@using Microsoft.EntityFrameworkCore;
+
+@inject IContactsRepository ContactsRepository
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+
+
+<div class="row mt-2 mb-5">
+    <h3 class="card-title text-info mb-3 ml-3">@Title Create Contact</h3>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="ContactModel" OnValidSubmit="HandleContactUpsert">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                <div class="form-group">
+
+                    <label>Email</label>
+                        <InputText @bind-Value="ContactModel.email" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.email"></ValidationMessage>
+                </div>
+             <div class="form-group">
+                        <label>lastname</label>
+                        <InputText @bind-Value="ContactModel.lastname" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.lastname"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>firstname</label>
+                        <InputText @bind-Value="ContactModel.firstname" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.firstname"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>spiritual_name</label>
+                        <InputText @bind-Value="ContactModel.spiritual_name" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.spiritual_name"></ValidationMessage>
+                </div>
+                    <div class="form-group">
+                        <label>country_of_residence</label>
+                        <InputText @bind-Value="ContactModel.country_of_residence" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.country_of_residence"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>country_calculated</label>
+                        <InputText @bind-Value="ContactModel.country_calculated" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.country_calculated"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>zip</label>
+                        <InputText @bind-Value="ContactModel.zip" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.zip"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>profession</label>
+                        <InputText @bind-Value="ContactModel.profession" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.profession"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>city</label>
+                        <InputText @bind-Value="ContactModel.city" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.city"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>hs_language</label>
+                        <InputText @bind-Value="ContactModel.hs_language" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.hs_language"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>do_you_speak_english_</label>
+                        <InputText @bind-Value="ContactModel.do_you_speak_english_" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.do_you_speak_english_"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>comments</label>
+                        <InputText @bind-Value="ContactModel.comments" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.comments"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>gender__</label>
+                        <InputText @bind-Value="ContactModel.gender__" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.gender__"></ValidationMessage>
+                    </div>
+                     <div class="form-group">
+                        <label>date_of_birth_date_picker</label>
+                        <InputText @bind-Value="ContactModel.date_of_birth_date_picker" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.date_of_birth_date_picker"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>mobilephone</label>
+                        <InputText @bind-Value="ContactModel.mobilephone" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.mobilephone"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>phone</label>
+                        <InputText @bind-Value="ContactModel.phone" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.phone"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>verified_art_teacher</label>
+                        <InputText @bind-Value="ContactModel.verified_art_teacher" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.verified_art_teacher"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>verified_knowledge_teachers</label>
+                        <InputText @bind-Value="ContactModel.verified_knowledge_teachers" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.verified_knowledge_teachers"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>verified_music</label>
+                        <InputText @bind-Value="ContactModel.verified_music" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.verified_music"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>verified_rituals_teacher</label>
+                        <InputText @bind-Value="ContactModel.verified_rituals_teacher" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.verified_rituals_teacher"></ValidationMessage>
+                    </div>  <div class="form-group">
+                        <label>verified_yoga_and_meditation_teachers</label>
+                        <InputText @bind-Value="ContactModel.verified_yoga_and_meditation_teachers" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.verified_yoga_and_meditation_teachers"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+                        <label>verified_aky_teacher</label>
+                        <InputText @bind-Value="ContactModel.verified_aky_teacher" class="form-control"></InputText>
+                        <ValidationMessage For="()=>ContactModel.verified_aky_teacher"></ValidationMessage>
+                    </div>
+                    <div class="form-group">
+@*                         <InputFile OnChange="HandleCsvUpload" multiple></InputFile>
+ *@                    </div>
+
+                    <div class="form-group p-3">
+                    <button class="btn btn-primary">@Title Contact</button>
+                        <NavLink href="Contacts-list" class="btn btn-secondary">Back to Index</NavLink>
+                </div>
+            </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public int? id { get; set; }
+    private ContactsDTO ContactModel { get; set; } = new ContactsDTO();
+    private string Title { get; set; } = "Create";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (id != null)
+        {
+            Title = "Update";
+            // ContactModel = await ContactsRepository.GetContact(Id.Value);
+
+        }
+        else
+        {
+            ContactModel = new ContactsDTO();
+
+        }
+
+
+
+    }
+
+
+
+    private async Task HandleContactUpsert()
+    {
+
+
+
+        var createdResult = await ContactsRepository.CreateContact(ContactModel);
+
+
+
+        NavigationManager.NavigateTo("Contacts-list");
+    }
+
+    // private async Task HandleCsvUpload(InputFileChangeEventArgs e)
+    // {
+    //     var file = e.File;
+    //     if (file == null)
+    //     {
+    //         return;
+    //     }
+
+    //     using var stream = file.OpenReadStream();
+    //     using var reader = new StreamReader(stream);
+    //     using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture));
+
+    //     var contacts = csv.GetRecords<ContactsDTO>().ToList();
+
+    //     // Qui potresti voler validare o trasformare i dati se necessario
+
+    //     foreach (var contact in contacts)
+    //     {
+    //         await ContactsRepository.CreateContact(contact);
+    //     }
+    // }
+
+    // public async Task<int> BatchInsertContacts(IEnumerable<ContactsDTO> contacts)
+    // {
+    //     if (contacts is null)
+    //     {
+    //         throw new ArgumentNullException(nameof(contacts));
+    //     }
+    //     // La query e la logica dipenderanno dalla tua implementazione corrente.
+    //     // Ecco un esempio usando Dapper:
+
+    //     var query = "INSERT INTO Contacts (id, email, lastname,firstname,spiritual_name,country_of_residence,country_calculated,zip,profession,city,hs_language,do_you_speak_english_,comments,gender__,date_of_birth_date_picker,mobilephone,phone,verified_art_teacher,verified_knowledge_teachers,verified_music,verified_rituals_teacher,verified_yoga_and_meditation_teachers,verified_aky_teacher) VALUES (@id, @email, @lastname,@firstname,@spiritual_name,@country_of_residence,@country_calculated,@zip,@profession,@city,@hs_language,@do_you_speak_english_,@comments,gender__,@date_of_birth_date_picker,@mobilephone,@phone,@verified_art_teacher,@verified_knowledge_teachers,@verified_music,@verified_rituals_teacher,@verified_yoga_and_meditation_teachers,@verified_aky_teacher)";
+      
+    //         return await ExecuteAsync(query, contacts);
+        
+    // }
+
+    // private async Task HandleCsvUpload(InputFileChangeEventArgs e)
+    // {
+    //     var file = e.File;
+
+    //     if (file == null)
+    //         return;
+
+    //     using var stream = new MemoryStream();
+    //     await file.OpenReadStream().CopyToAsync(stream);
+    //     var content = Encoding.UTF8.GetString(stream.ToArray());
+
+    //     var lines = content.Split('\n');
+    //     if (lines.Length < 2) // Almeno header e una riga di dati
+    //         return;
+
+    //     var header = lines[0].Split(',');
+    //     var contacts = new List<ContactsDTO>();
+
+    //     for (var i = 1; i < lines.Length; i++)
+    //     {
+    //         var values = lines[i].Split(',');
+    //         if (values.Length != header.Length) // Dati mal formati
+    //             continue;
+
+    //         var contact = new ContactsDTO
+    //             {
+    //                 id = values[Array.IndexOf(header, "id")],
+    //                 email = values[Array.IndexOf(header, "email")],
+    //                 lastname = values[Array.IndexOf(header, "lastname")],
+    //                 firstname = values[Array.IndexOf(header, "firstname")],
+    //                 spiritual_name = values[Array.IndexOf(header, "spiritual_name")],
+    //                 country_of_residence = values[Array.IndexOf(header, "country_of_residence")],
+    //                 country_calculated = values[Array.IndexOf(header, "country_calculated")],
+    //                 zip = values[Array.IndexOf(header, "zip")],
+    //                 profession = values[Array.IndexOf(header, "profession")],
+    //                 city = values[Array.IndexOf(header, "city")],
+    //                 hs_language = values[Array.IndexOf(header, "hs_language")],
+    //                 do_you_speak_english_ = values[Array.IndexOf(header, "do_you_speak_english_")],
+    //                 comments = values[Array.IndexOf(header, "comments")],
+    //                 gender__ = values[Array.IndexOf(header, "gender__")],
+    //                 date_of_birth_date_picker = values[Array.IndexOf(header, "date_of_birth_date_picker")],
+    //                 mobilephone = values[Array.IndexOf(header, "mobilephone")],
+    //                 phone = values[Array.IndexOf(header, "phone")],
+    //                 verified_art_teacher = values[Array.IndexOf(header, "verified_art_teacher")],
+    //                 verified_knowledge_teachers = values[Array.IndexOf(header, "verified_knowledge_teachers")],
+    //                 verified_music = values[Array.IndexOf(header, "verified_music")],
+    //                 verified_rituals_teacher = values[Array.IndexOf(header, "verified_rituals_teacher")],
+    //                 verified_yoga_and_meditation_teachers = values[Array.IndexOf(header, "verified_yoga_and_meditation_teachers")],
+    //                 verified_aky_teacher = values[Array.IndexOf(header, "verified_aky_teacher")]
+    //             };
+
+    //         contacts.Add(contact);
+    //     }
+
+    //     await ContactsRepository.BatchInsertContacts(contacts);
+    // }
+
+}

@@ -1,0 +1,754 @@
+﻿@page "/Events-list/Fees"
+@page "/Events-list/Fees/{id:long}"
+
+@using BMDataHub_Server.Service
+@using Models
+@using Buisness.Repository.IRepository
+@inject ICoursesRepository CoursesRepository
+@inject IContactsRepository ContactsRepository
+@inject IFeesRepository FeesRepository
+@inject IReceiptImageRepository ReceiptImageRepository
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject BMDataHub_Server.Service.IService.IFileUpload FileUpload
+
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+@inject DialogService ds
+@inject AuthenticationStateProvider AuthStat
+
+@attribute [Authorize]
+ 
+
+@using System.Linq.Dynamic.Core
+@using System.Linq
+@using System.Text;
+
+
+
+<div class="row mt-3">
+    <div class="col-8">
+        <RadzenText TextStyle="TextStyle.H4" style="color: var(--rz-primary-dark);"><strong>Invoice: </strong>@* <span style="color: var(--rz-secondary);"> @Paid</span>*@<span style=@Paid[1]>@Paid[0]</span> </RadzenText>
+
+
+    </div>
+    <div class="col-3 mb-3">
+        <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to Events" Click="@(() => NavigateTo("/Events-list"))"></RadzenButton>
+    </div>
+
+    @if (Courses1.Any())
+    {
+    
+        <RadzenCard Class="rz-my-12 rz-px-12" Style="max-width: auto">
+            <RadzenStack class="mt-4">
+            <div class="d-flex justify-content-end">
+                <div class="col-md-2 mt-2">
+                    <RadzenImage Path="bhakti_marga_big.png" Style="width:200px; height:auto;" />
+                </div>
+            </div>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start" Gap="1rem" Class="rz-p-4" Style="margin-top:-85px !important">
+
+                <RadzenStack Gap="0">
+
+                    <RadzenText TextStyle="TextStyle.H4" Class=" rz-p-8"  TextAlign="TextAlign.Center"><strong>@Title</strong></RadzenText>
+                    <RadzenStack Gap="0" Style="margin-left:40px">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-align-items-center rz-mb-2" Style="margin-top:-10px">Teacher: </RadzenText>
+
+                        @foreach (var teacher in Teachers)
+                        {
+                            <div class="rz-display-flex rz-align-items-center rz-mb-2">
+                                <RadzenText TextStyle="TextStyle.Body1" class="rz-mr-2">
+                                    <b>@teacher.spiritual_name</b>
+                                </RadzenText>
+
+                                <RadzenText TextStyle="TextStyle.Body1" class="rz-mr-2">
+                                    <b>(@teacher.firstname</b>
+                                </RadzenText>
+
+                                <RadzenText TextStyle="TextStyle.Body1">
+                                    <b> @teacher.lastname)</b>
+                                </RadzenText>
+                            </div>
+                        }
+                    </RadzenStack>
+                </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+            <hr style="width: 60%;  margin-right: 25%;" />
+
+
+            @if (Courses1.Any())
+            {
+                <RadzenText TextStyle="TextStyle.H6" Class="rz-display-flex rz-align-items-center rz-mb-2" Style=" margin-top: 50px;">Course Tickets</RadzenText>
+
+                <RadzenDataGrid Data="@Courses1" TItem="CoursesDTO" Style="width: 100%">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="CoursesDTO" Property="LineItemTitle" Title="Items" Width="700px">
+                            <Template Context="order">
+                                @FindNonCommonTitle(order.LineItemTitle)
+
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="CoursesDTO" Property="sku" Title="Sku" Width="250px">
+                          
+                        </RadzenDataGridColumn>
+                       
+                        <RadzenDataGridColumn TItem="CoursesDTO" Property="TotalStudentsSku" Title="QTY" TextAlign="TextAlign.Center" Width="150px" />
+                        <RadzenDataGridColumn TItem="CoursesDTO" Property="LineItemPrice" Title="Price" TextAlign="TextAlign.Center" Width="150px">
+                            <Template Context="order">
+                                @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", order.LineItemPrice)
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="CoursesDTO" Property="TotalLineItemPriceSku" Title="Item Total" TextAlign="TextAlign.Center" Width="150px">
+                            <FooterTemplate>
+                                Total: <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Courses1.Sum(o => o.TotalLineItemPriceSku))</b>
+                                @*   <b style="margin-left:15px">
+                        Displayed orders: <b>@Courses1.Count()</b>
+                        </b> *@
+
+                            </FooterTemplate>
+                            <Template Context="order">
+                                @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", order.TotalLineItemPriceSku)
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+
+                <RadzenText TextStyle="TextStyle.H6" Class="rz-display-flex rz-align-items-center rz-mb-2" Style=" margin-top: 50px;">Fees List</RadzenText>
+
+
+                <RadzenDataGrid Data="@Fees1" TItem="FeesDTO" Style="width: 100%">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="FeesDTO" Property="Name" Title="Name">
+                            <Template Context="data">
+                                <RadzenText TextStyle="TextStyle.Body1">@data.Name</RadzenText>
+                            </Template>
+                            <FooterTemplate>
+                                Total amount: <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Fees1.Sum(o => o.Price))</b>
+                           
+                            </FooterTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="FeesDTO" Property="Description" Title="Description">
+                            <FooterTemplate>
+@*                                    N° Fees: <b>@Fees1.Count()</b>
+ *@                            </FooterTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="FeesDTO" Property="FeesReceipt" Title="Receipts" >
+                            <Template Context="data">
+                                <div>
+                                    @foreach (var image in data.FeesReceipt)
+                                    {
+                                        <a href="@image.ReceiptImageUrl" target="_blank">
+                                            <img src="@image.ReceiptImageUrl" alt="Receipt Image" width="100" style="margin-left:10px; border: 2px solid black;" />
+                                        </a>
+                                    }
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="FeesDTO" Property="Id" Title="Actions">
+                            <Template Context="data">
+                                <RadzenButton Click="@(async () => await ButtonClicked(data.Id))" Text="Delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Small"></RadzenButton>
+                            </Template>
+                         
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="FeesDTO" Property="Validate" Title="Validate" TextAlign="TextAlign.Center" Width="150" />
+
+                        <RadzenDataGridColumn TItem="FeesDTO" Property="Price" Title="Price" TextAlign="TextAlign.Center" Width="150">
+                            <Template Context="data">
+                                @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.Price)
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0" Class="rz-p-4">
+                    <RadzenText TextStyle="TextStyle.Body1" style="color: var(--rz-primary-dark); margin-right:0px;"><strong>Receipts: </strong>@* <span style="color: var(--rz-secondary);"> @Paid</span>*@<span style=@Validated[1]>@Validated[0]</span> </RadzenText>
+
+                </RadzenStack>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0" Class="rz-p-4" >
+
+                    <RadzenButton Shade="Shade.Default" ButtonStyle="ButtonStyle.Success" class="rz-border-radius-6" Style="margin-right:3px" Text="Validate" Click="@(() => ValidateFees())" />
+                    <RadzenButton Shade="Shade.Default" ButtonStyle="ButtonStyle.Primary" class="rz-border-radius-6" Text="Add Fee" Click="@(() => NavigateTo($"/Events-list/Fees/{@Courses1.FirstOrDefault().ProductId}/Create"))"></RadzenButton>
+
+                </RadzenStack>
+
+            }
+            else
+            {
+                <p>No Courses available.</p>
+            }
+
+            <RadzenCard Class="rz-shadow-0  rz-border-base-300 1px solid mb-4" Style="max-width: 500px; background-color: #fafafa">
+                    <RadzenStack RowGap="0" Class="p-5">
+
+                        @code {
+
+        private double? TotalAmount => Courses1.Sum(o => o.TotalLineItemPriceSku);
+        private double? TotalExpenses => @Fees1.Sum(o => o.Price);
+
+        private double? RemainingBudget()
+
+        {
+            var firstCourse = Courses1.FirstOrDefault();
+            return firstCourse != null ? firstCourse.TotalLineItemPrice - TotalExpenses : 0;
+        }
+                    }
+
+          @*       <RadzenDataGrid Data="@CoursesEmpty" TItem="CoursesDTO" Style="width: 60%"  >
+                    <Columns>
+
+                        <RadzenDataGridColumn TItem="CoursesDTO" Title="Tot. Income - Tot. Fees" TextAlign="TextAlign.Center">
+                            <Template >
+                                @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", RemainingBudget())
+
+
+                          </Template>
+                                <FooterTemplate>
+
+                                    Tot. Earn  <b style="margin-left:15px">
+                                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 1, 10))
+
+                                    </b>
+                                </FooterTemplate>
+                            
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="CoursesDTO" Title="Taxes" TextAlign="TextAlign.Center">
+
+                                <Template>
+                                    @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:P0}", CalcolaPercentuale(RemainingBudget(), 4, 10))
+
+                                </Template>
+
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="CoursesDTO" Title="Teacher" TextAlign="TextAlign.Center">
+
+                                <Template>
+                                    @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 1, 10))
+
+                                </Template>
+
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="CoursesDTO"  Title="BM International" TextAlign="TextAlign.Center">
+                              
+                                <Template >
+                                    @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 2, 10))
+
+                                </Template>
+                              
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="CoursesDTO" Property="TotalAmount" Title="Country" TextAlign="TextAlign.Center">
+                                <Template>
+                                    @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 3, 10))
+
+
+                                </Template>
+                                
+
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid> *@
+                <RadzenText TextStyle="TextStyle.H5" ><strong>Summary</strong>  </RadzenText>
+                <hr style="margin-top:-7px" />
+                    <RadzenColumn >
+                    <RadzenText TextStyle="TextStyle.Overline">Tot. Income</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:10px">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", TotalAmount)
+                        </RadzenText>
+                     </RadzenColumn>
+                    <RadzenColumn>
+                        <RadzenText TextStyle="TextStyle.Overline">Tot. Fees</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:10px">
+                            @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", TotalExpenses)
+                        </RadzenText>
+                    </RadzenColumn>
+                    <RadzenColumn >
+                        <RadzenText TextStyle="TextStyle.Overline">Taxes</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:10px"> @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:P0}", CalcolaPercentuale(RemainingBudget(), 4, 0))</RadzenText>
+                        </RadzenColumn>
+
+                        <hr />
+
+                        <RadzenColumn >
+                            <RadzenText TextStyle="TextStyle.Overline">Sharing Teacher</RadzenText>
+@*                             <RadzenButton Variant="Variant.Text" Text="@Paid" Click=@HandlePaid Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success"></RadzenButton>
+ *@
+                            <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:10px"> @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 1, 0)) (+ Fees)</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn >
+                            <RadzenText TextStyle="TextStyle.Overline">Sharing BM International</RadzenText>
+
+                            <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:10px">@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 2, 0))</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenText TextStyle="TextStyle.Overline">Sharing Country</RadzenText>
+
+                            <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:10px"> @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 3, 0))</RadzenText>
+                        </RadzenColumn>
+                        <hr style="margin-bottom:0px" />
+
+                        <RadzenColumn>
+                            <RadzenText TextStyle="TextStyle.H6" class="d-flex justify-content-end"><strong>Your Income</strong></RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5" Style="margin-right:20px" class="d-flex justify-content-end">@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", CalcolaPercentuale(RemainingBudget(), 1, 0) + Fees1.Sum(o => o.Price)) </RadzenText>
+                        </RadzenColumn>
+                    </RadzenStack> 
+                    <RadzenStack>
+                        <RadzenButton Size="ButtonSize.Large" Shade="Shade.Default" ButtonStyle="ButtonStyle.Success" class="rz-border-radius-0" Text="PAY" Click="@(() => PayTeacher())"></RadzenButton>
+
+                    </RadzenStack>
+            </RadzenCard>
+            </RadzenCard>
+
+    }
+    else
+    {
+        <p>No Courses available.</p>
+    }
+
+</div>
+
+
+
+
+
+
+
+@code {
+    private bool isAdmin = false;
+    private bool isTeacher = false;
+    private bool isCountry = false;
+    private bool isBMInt = false;
+
+
+    string text = "Hi";
+    RadzenDataGrid<CoursesDTO> grid;
+    IList<CoursesDTO>? orders;
+
+    int count;
+    private string? Title { get; set; } = " No Title";
+
+    private string[] Paid { get; set; } = new string[] { "Paid", "color:limegreen" };
+    private string[] Validated { get; set; } = new string[] { "Validated", "color:limegreen" };
+
+
+    [Parameter]
+    public long? Id { get; set; }
+
+
+
+    // [Parameter]
+    // public long? Id { get; set; }
+
+    private IEnumerable<CoursesDTO> Courses1 { set; get; } = new List<CoursesDTO>();
+    private IEnumerable<CoursesDTO> Courses2 { set; get; } = new List<CoursesDTO>();
+
+
+    private IEnumerable<ContactsDTO> Teachers { set; get; } = new List<ContactsDTO>();
+    private IEnumerable<FeesDTO> Fees1 { set; get; } = new List<FeesDTO>();
+    private FeesDTO FeesModel { get; set; } = new FeesDTO();
+    private ReceiptImageDTO ReceiptImage { set; get; } = new ReceiptImageDTO();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthStat.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity.IsAuthenticated)
+            {
+                // l'utente è autenticato
+                isAdmin = user.IsInRole("Admin");
+                isTeacher = user.IsInRole("Teacher");
+                isCountry = user.IsInRole("CountryCoord");
+                isBMInt = user.IsInRole("BMInternational");
+            }
+
+
+            var allCourses = await CoursesRepository.GetAllCourses();
+            var allTeachers = await ContactsRepository.GetAllContacts();
+            var allFees = await FeesRepository.GetAllFees();
+
+            // Filtra per ProductId
+            Courses1 = allCourses.Where(course => course.ProductId == Id).ToList();
+            Courses2 = allCourses.Where(course => course.ProductId == Id).ToList();
+
+            // Estrai gli SKU unici
+            var skuUnici = Courses1.Select(c => c.sku).Distinct().ToList();
+
+            // Crea una lista temporanea per i nuovi DTO
+            var tempCourses = new List<CoursesDTO>();
+
+            foreach (var sku in skuUnici)
+            {
+                // Trova il primo corso con questo SKU per copiare alcune proprietà generali
+                var courseForSku = Courses1.FirstOrDefault(c => c.sku == sku);
+
+                if (courseForSku != null)
+                {
+                    var newCourse = new CoursesDTO
+                        {
+                            //Specific Sku Properties
+                            Id = courseForSku.Id,
+                            LineItemTitle = courseForSku.LineItemTitle,
+                            ProductId = courseForSku.ProductId,
+                            LineItemId = courseForSku.LineItemId,
+                            sku = sku,
+                            SkuUnici = skuUnici,
+                            LineItemPrice = courseForSku.LineItemPrice,
+                            DateTimeAdded = courseForSku.DateTimeAdded,
+                            Store = courseForSku.Store,
+                            TotalLineItemPriceSku = Courses1.Where(c => c.sku == sku).Sum(course => course.LineItemPrice),
+                            TotalStudentsSku = Courses1.Count(c => c.sku == sku),
+                            //General Properties
+                            TotalLineItemPrice = Courses1.Sum(course => course.LineItemPrice),
+                            TotalStudents = Courses1.Count(),
+                            Paid = Courses1.FirstOrDefault().Paid,
+                        };
+
+                    tempCourses.Add(newCourse);
+                }
+            }
+
+
+
+            // Assegna la lista temporanea a Courses1
+            Courses1 = tempCourses;
+            Title = " "+FindCommonTitle(Courses1);
+
+
+
+            Teachers = allTeachers.Where(teacher => teacher.id == Courses2.FirstOrDefault().IdTeacher);
+            Fees1 = allFees.Where(fee => fee.ProductId == Courses2.FirstOrDefault().ProductId);
+
+            if (Fees1.Count() == 0)
+            {
+
+                Validated[0] = "No Record";
+                Validated[1] = "color: var(--rz-warning);";
+            }
+            else
+            {
+
+
+                Validated[0] = "Validated";
+                Validated[1] = "color:limegreen";
+
+                foreach (var fee in Fees1)
+                {
+                    var receiptImages = await ReceiptImageRepository.GetAllReceiptImages(fee.Id);
+                    fee.FeesReceipt = receiptImages.ToList();
+
+
+                    if (fee.Validate == false || fee.Validate == null)
+                    {
+                        Validated[0] = "Not Validated";
+                        Validated[1] = "color: var(--rz-secondary);";
+                    }
+
+                }
+            }
+
+
+
+            Paid[0] = "Paid";
+            Paid[1] = "color:limegreen";
+
+
+
+            foreach (var course in Courses1)
+            {
+
+
+                if (course.Paid == false || course.Paid == null)
+                {
+                    Paid[0] = "Not Paid";
+                    Paid[1] = "color: var(--rz-secondary);";
+                }
+
+
+            }
+
+
+
+            await JSRuntime.InvokeAsync<object>("console.log", Fees1, Courses1, FeesModel, ReceiptImage);
+
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+
+    public async Task ButtonClicked(int FeeId)
+    {
+        var result = await ds.Confirm("Are you sure?");
+        // await JSRuntime.InvokeAsync<string>("console.log", "hello world");
+
+
+        if (result.Value == true)
+        {
+            FeesDTO fee = await FeesRepository.GetFee(FeeId);
+            await JSRuntime.InvokeAsync<string>("console.log", fee.Name, fee.FeesReceipt);
+
+
+
+            foreach (var image in fee.FeesReceipt)
+            {
+                var imageName = image.ReceiptImageUrl.Replace($"{NavigationManager.BaseUri}ReceiptsImages/", "");
+                FileUpload.DeleteFile(imageName);
+                await JSRuntime.InvokeAsync<string>("console.log", imageName, image);
+
+                Console.WriteLine(imageName, image);
+            }
+
+            await FeesRepository.DeleteFees(FeeId);
+            NotificationService.Notify(NotificationSeverity.Success, "Cancelled");
+            Fees1 = await FeesRepository.GetAllFees();
+            //NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+    }
+
+
+    public async Task ValidateFees()
+    {
+        var result = await ds.Confirm("Are you sure?");
+        // await JSRuntime.InvokeAsync<string>("console.log", "hello world");
+        if (!result.HasValue)
+        {
+            return; // L'utente ha annullato l'azione.
+        }
+
+        if (result.Value == true)
+        {
+            try
+            {
+                foreach (var fee in Fees1)
+                {
+                    fee.Validate = true; 
+                    await FeesRepository.UpdateFee(fee.Id, fee); // Chiamata al backend per aggiornare la fee.
+                }
+
+                NotificationService.Notify(NotificationSeverity.Success, "Receipts Validates");
+
+                // Ricarica i dati aggiornati.
+                Fees1 = await FeesRepository.GetAllFees();
+                Validated[0] = "Validated";
+                Validated[1] = "color:limegreen";
+
+                StateHasChanged(); // Aggiorna l'interfaccia utente.
+                                   // NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                NotificationService.Notify(NotificationSeverity.Error, "Error");
+            }
+
+        }
+    }
+
+    public async Task PayTeacher()
+    {
+        var result = await ds.Confirm("Are you sure?");
+        // await JSRuntime.InvokeAsync<string>("console.log", "hello world");
+
+        if (!result.HasValue)
+        {
+            return; // L'utente ha annullato l'azione.
+        }
+        if (result.Value == true && Validated[0] != "Not Validated")
+        {
+            try
+            {
+                foreach (var course in Courses2)
+                {
+
+                    course.Paid = true;
+                    await CoursesRepository.UpdateCourse(course.Id, course); // Chiamata al backend per aggiornare la fee.
+
+
+                }
+
+                NotificationService.Notify(NotificationSeverity.Success, "Success Payment");
+
+                // Ricarica i dati aggiornati.
+                Paid[0] = "Paid";
+                Paid[1] = "color:limegreen";
+
+                StateHasChanged(); // Aggiorna l'interfaccia utente.
+                                   //NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                NotificationService.Notify(NotificationSeverity.Error, "Error");
+            }
+
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "You need to validate the Fees in order to pay the Teacher Sharing");
+            return;
+        }
+    }
+  
+
+    bool isLoading = false;
+
+    async Task ShowLoading()
+    {
+        isLoading = true;
+
+        await Task.Yield();
+
+        isLoading = false;
+    }
+
+
+
+
+
+
+    protected string FindCommonTitle(IEnumerable<CoursesDTO> courses)
+    {
+        if (!courses.Any())
+            return string.Empty;
+
+        var commonTitle = courses.First().LineItemTitle;
+        foreach (var course in courses)
+        {
+            commonTitle = FindCommonPrefix(commonTitle, course.LineItemTitle);
+            if (string.IsNullOrEmpty(commonTitle))
+                break;
+        }
+        while (!string.IsNullOrEmpty(commonTitle) && (commonTitle.EndsWith("-") || commonTitle.EndsWith(" ")))
+        {
+            commonTitle = commonTitle.TrimEnd('-', ' ');
+        }
+
+        return commonTitle;
+    }
+
+    public string FindNonCommonTitle(string secondString)
+    {
+        if (string.IsNullOrEmpty(secondString))
+        {
+            // La seconda stringa è vuota o null, quindi non ci sono caratteri non comuni.
+            return string.Empty;
+        }
+
+        // Utilizza la stringa Title come prima stringa di confronto
+        string firstString = Title ?? string.Empty;
+
+        // Trova la sottostringa comune più lunga
+        int minLength = Math.Min(firstString.Length, secondString.Length);
+        int commonLength = 0;
+        for (int i = 0; i < minLength; i++)
+        {
+            if (firstString[i] == secondString[i])
+            {
+                commonLength++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // Estrai i caratteri non comuni dalla seconda stringa
+        string nonCommonCharacters = secondString.Substring(commonLength);
+
+        // Rimuovi spazi e il carattere '-' all'inizio
+        nonCommonCharacters = nonCommonCharacters.TrimStart(' ', '-');
+
+        if (string.IsNullOrEmpty(nonCommonCharacters))
+        {
+            // Se non ci sono caratteri non comuni, restituisci la seconda stringa completa
+            return secondString;
+        }
+
+        return nonCommonCharacters;
+    }
+
+
+    protected string FindCommonPrefix(string str1, string str2)
+    {
+        int minLength = Math.Min(str1.Length, str2.Length);
+        StringBuilder commonPrefix = new StringBuilder();
+
+        for (int i = 0; i < minLength; i++)
+        {
+            if (str1[i] == str2[i])
+                commonPrefix.Append(str1[i]);
+            else
+                break;
+        }
+
+        return commonPrefix.ToString();
+    }
+
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+
+        // console.Log($"{message.Severity} notification");
+    }
+
+    void NotificationClick(NotificationMessage message)
+    {
+        // console.Log($"{message.Summary} clicked, Payload = {message.Payload}");
+    }
+    private void NavigateTo(string url)
+    {
+        // Assicurati di avere NavigationManager iniettato nel tuo componente
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task AddReceiptFeeImage(FeesDTO feeDeatails)
+    {
+        foreach (var imageUrl in FeesModel.ImageUrls)
+        {
+            if (FeesModel.FeesReceipt == null || FeesModel.FeesReceipt.Where(x => x.ReceiptImageUrl == imageUrl).Count() == 0)
+            {
+                ReceiptImage = new ReceiptImageDTO()
+                    {
+                        FeeId = feeDeatails.Id,
+                        ReceiptImageUrl = imageUrl
+
+                    };
+                await ReceiptImageRepository.CreateReceiptImage(ReceiptImage);
+            }
+        }
+    }
+
+    public double? CalcolaPercentuale(double? numero, int opzione, double? tax)
+    {
+
+        switch (opzione)
+        {
+            case 1:
+                return numero * 0.50 - numero * 0.50* (tax / 100);
+            case 2:
+                return numero * 0.0 - numero * 0.0*(tax / 100);
+            case 3:
+                return numero * 0.50 - numero * 0.50*(tax / 100);
+            case 4:
+                return tax*10;
+            default:
+                throw new ArgumentException("Opzione non valida. Deve essere 1, 2 o 3.");
+        }
+    }
+
+
+}
+
+

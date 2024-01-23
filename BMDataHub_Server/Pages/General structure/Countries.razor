@@ -1,0 +1,98 @@
+﻿@page "/Countries-list"
+@namespace BMDataHub_Server.Pages.Countries
+@attribute [Authorize(Roles = Common.SD.Role_Admin)]
+@using Models
+
+
+<div class="row mt-3">
+
+
+<div class="col-8 ">
+        <RadzenText TextStyle="TextStyle.H4" style="color: var(--rz-primary-dark);"><strong>Countries List</strong></RadzenText>
+
+</div>
+    @if (Countries1.Any())
+{
+    <RadzenDataGrid Data="@Countries1" AllowPaging="true" PageSize="10" PagerHorizontalAlign="HorizontalAlign.Center" TItem="CountriesDTO" ColumnWidth="200px">
+        <Columns>
+            @{
+                Random rnd = new Random();
+            }
+            <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Property="country_calculated" Title="Country" Width="200px" TextAlign="TextAlign.Left">
+                <Template Context="data">
+                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-left:15px;"><strong>@data.country_calculated</strong></RadzenText>
+                     
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Title="Country Inc." Width="100px" TextAlign="TextAlign.Left">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.SharingCountry)
+                    </Template>
+                    <FooterTemplate>
+                        <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Countries1.Sum(o => o.SharingCountry))</b>
+
+                    </FooterTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Title="Total Income" Width="100px" TextAlign="TextAlign.Left">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.TotalIncome)
+                </Template>
+                <FooterTemplate>
+                    <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Countries1.Sum(o => o.TotalIncome))</b>
+                 
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Title="Teachers Inc." Width="100px" TextAlign="TextAlign.Left">
+                    <Template Context="data">
+                        @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.SharingTeachers)
+                    </Template>
+                    <FooterTemplate>
+                        <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Countries1.Sum(o => o.SharingTeachers))</b>
+
+                    </FooterTemplate>
+                </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Title="TotalFees" Width="100px" TextAlign="TextAlign.Left">
+                <Template Context="data">
+                    @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.TotalFees)
+                </Template>
+                <FooterTemplate>
+                    <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Countries1.Sum(o => o.TotalFees))</b>
+
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Title="BM Int Inc." Width="100px" TextAlign="TextAlign.Left">
+                    <Template Context="data">
+                    @String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", data.SharingBMInt)
+                </Template>
+                <FooterTemplate>
+                   <b>@String.Format(new System.Globalization.CultureInfo("de-DE"), "{0:C}", Countries1.Sum(o => o.SharingBMInt))</b>
+
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+          
+           
+           
+            <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Property="TotalTeachers" Title="Teachers" Width="100px" TextAlign="TextAlign.Left" >
+                <FooterTemplate>
+                    <b> @Countries1.Sum(o => o.TotalTeachers)</b>
+
+                </FooterTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="CountriesDTO" Sortable="false" Filterable="false" Title="Actions" TextAlign="TextAlign.Center">
+                <Template Context="dataItem">
+                    <RadzenButton Shade="Shade.Default" ButtonStyle="ButtonStyle.Primary" class="rz-border-radius-6" Text="Teachers" Click="@(() => NavigateTo($"/Contacts-list/{dataItem.country_calculated}"))"></RadzenButton>
+                </Template>
+            </RadzenDataGridColumn>
+
+
+        </Columns>
+    </RadzenDataGrid>
+}
+else
+{
+    <p>No contacts available.</p>
+}
+
+</div>
+
+

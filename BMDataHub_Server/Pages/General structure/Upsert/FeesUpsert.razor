@@ -1,0 +1,385 @@
+﻿@page "/Events-list/Fees/{id:long}/Create"
+
+@using Models
+@using Microsoft.AspNetCore.Components;
+@using System.IO;
+@using System.Text;
+@using System.Collections.Generic;
+@using CsvHelper;
+@using CsvHelper.Configuration;
+@using System.Globalization;
+@using Buisness.Repository.IRepository;
+@using Microsoft.EntityFrameworkCore;
+@using BMDataHub_Server.Service
+@using BMDataHub_Server.Service.IService
+
+@inject NotificationService NotificationService
+@inject IReceiptImageRepository ReceiptImageRepository
+@inject IFeesRepository FeesRepository
+@inject IContactsRepository ContactsRepository
+
+@inject IFileUpload FileUpload
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+
+
+
+
+<div class="row mt-2 mb-5">
+    <RadzenText TextStyle="TextStyle.H4" style="color: var(--rz-primary-dark);"><strong>@Title Fee</strong>@* <span style="color: var(--rz-secondary);"> @Title</span> *@</RadzenText>
+
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="FeesModel" OnValidSubmit="HandleFeesUpsert">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                <div class="form-group mt-2">
+
+                    <label>Name</label>
+                        <InputText @bind-Value="FeesModel.Name" class="form-control"></InputText>
+                        <ValidationMessage For="()=>FeesModel.Name"></ValidationMessage>
+                </div>
+             <div class="form-group mt-2">
+                        <label>Description</label>
+                        <InputText @bind-Value="FeesModel.Description" class="form-control"></InputText>
+                        <ValidationMessage For="()=>FeesModel.Description"></ValidationMessage>
+                    </div>  
+                    <div class="form-group mt-2">
+                        <label>Price</label>
+                        <InputNumber @bind-Value="FeesModel.Price" class="form-control"></InputNumber>
+                        <ValidationMessage For="()=>FeesModel.Price"></ValidationMessage>
+                </div>
+
+                    <div class="form-check-inline mt-2">
+                        <label>Paid</label>
+                        <InputCheckbox @bind-Value="PaidWrapper" class="form-check-input"></InputCheckbox>
+                        <ValidationMessage For="@(() => FeesModel.Paid)"></ValidationMessage>
+                    </div>
+
+ 
+                    <div class="form-group">
+@*                         <InputFile OnChange="HandleCsvUpload" multiple></InputFile>
+ *@                    </div>
+
+                    <div class="form-group mt-5">
+                        <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Primary" Text="Back to Index" Click="@(() => NavigateTo($"/Events-list/Fees/{@FeesModel.ProductId}"))"></RadzenButton>
+
+                    <button class="btn btn-primary">@Title Fee</button>
+                        <InputFile OnChange="HandleReceiptUpload" multiple></InputFile>
+@*                         <RadzenUpload Multiple="true" Change=@(() =>  HandleReceiptUpload) />
+ *@                        <div class="row">
+                            @if (IsImageUploadProcessStarted)
+                            {
+                                <div class="col-md-12">
+                                    <span><i class="fa fa-spin fa-spinner"></i> Please wait... Images Is Uploading</span>
+                                </div>
+                            }
+                            @if (FeesModel.ImageUrls != null && FeesModel.ImageUrls.Count > 0)
+                            {
+                                int serial = 1;
+                                foreach (var receiptImage in FeesModel.ImageUrls)
+                                {
+                                    <div class="col-md-2 mt-3">
+                                        <div class="room-image" style="background:url('@receiptImage') 50% 50%">
+                                            <span class="room-image-title">@serial</span>
+
+                                        </div>
+                                        <button type="button" @onclick="()=>DeletePhoto(receiptImage)" class="btn btn-outline-danger btn-block mt-4">Delete </button>
+ 
+                                    </div>
+                                    serial++;
+                                }
+                            }
+                        </div>
+                </div>
+            </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public long id { get; set; }
+    private FeesDTO FeesModel { get; set; } = new FeesDTO();
+    private string Title { get; set; } = "Create";
+    public bool IsImageUploadProcessStarted { get; set; }
+    private ReceiptImageDTO ReceiptImage { set; get; } = new ReceiptImageDTO();
+
+    private List<string> DeleteImageNames { get; set; } = new List<string>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        FeesModel = new FeesDTO();
+        FeesModel.ProductId = id; 
+        FeesModel.CreatedAt = DateTime.Now;
+        FeesModel.Validate = false;
+
+
+
+    }
+
+    private void NavigateTo(string url)
+    {
+        // Assicurati di avere NavigationManager iniettato nel tuo componente
+        NavigationManager.NavigateTo(url);
+    }
+
+
+    private bool PaidWrapper
+    {
+        get => FeesModel.Paid ?? false;
+        set => FeesModel.Paid = value;
+    }
+
+    private async Task HandleFeesUpsert()
+    {
+
+        try
+        {
+
+            // FeesModel.LineItemTitle = ContactsRepository.TeacherById()
+
+            var createdResult = await FeesRepository.CreateFee(FeesModel);
+
+            if (FeesModel.ImageUrls != null && FeesModel.ImageUrls.Any())
+            {
+                await AddReceiptFeeImage(createdResult);
+
+            }
+            NotificationService.Notify(NotificationSeverity.Success, "New Fee Created Successfully");
+
+            NavigateTo($"/Events-list/Fees/{createdResult.ProductId}");
+
+            
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
+
+    private async Task HandleReceiptUpload(InputFileChangeEventArgs e)
+    {
+        IsImageUploadProcessStarted = true;
+
+        try
+        {
+            var images = new List<string>();
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
+                    if (fileInfo.Extension.ToLower() == ".jpg" ||
+                        fileInfo.Extension.ToLower() == ".png" ||
+                        fileInfo.Extension.ToLower() == ".jpeg")
+                    {
+                        var uploadedImagePath = await FileUpload.UploadFile(file);
+                        images.Add(uploadedImagePath);
+                    }
+                    else
+                    {
+                       NotificationService.Notify(NotificationSeverity.Error, "Please select jpg, png, jpeg pdf");
+
+                    }
+
+                }
+
+                if (images.Any())
+                {
+                    if (FeesModel.ImageUrls != null && FeesModel.ImageUrls.Any())
+                    {
+                        FeesModel.ImageUrls.AddRange(images);
+                    }
+                    else
+                    {
+                        FeesModel.ImageUrls = new List<string>();
+                        FeesModel.ImageUrls.AddRange(images);
+                    }
+                }
+                else
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Image uploading failed");
+
+                    return;
+                }
+            }
+            IsImageUploadProcessStarted = false;
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+
+
+
+    }
+
+    private async Task AddReceiptFeeImage(FeesDTO feeDeatails)
+    {
+        foreach (var imageUrl in FeesModel.ImageUrls)
+        {
+            if (FeesModel.FeesReceipt == null || FeesModel.FeesReceipt.Where(x => x.ReceiptImageUrl == imageUrl).Count() == 0)
+            {
+                ReceiptImage = new ReceiptImageDTO()
+                    {
+                        FeeId = feeDeatails.Id,
+                        ReceiptImageUrl = imageUrl
+
+                    };
+                await ReceiptImageRepository.CreateReceiptImage(ReceiptImage);
+            }
+        }
+    }
+
+    internal async Task DeletePhoto(string imageUrl)
+    {
+        try
+        {
+            var imageIndex = FeesModel.ImageUrls.FindIndex(x => x == imageUrl);
+            var imageName = imageUrl.Replace($"{NavigationManager.BaseUri}RoomImages/ ", "");
+            if (FeesModel.Id == 0 && Title == "Create")
+            {
+                var result = FileUpload.DeleteFile(imageName);
+            }
+            else
+            {
+                DeleteImageNames ??= new List<string>();
+                DeleteImageNames.Add(imageUrl);
+
+            }
+            FeesModel.ImageUrls.RemoveAt(imageIndex);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+    }
+
+    // internal async Task DeletePhoto(string imageUrl)
+    // {
+    //     try
+    //     {
+    //         var imageIndex = HotelRoomModel.ImageUrls.FindIndex(x => x == imageUrl);
+    //         var imageName = imageUrl.Replace($"{NavigationManager.BaseUri}RoomImages/ ", "");
+    //         if (HotelRoomModel.Id == 0 && Title == "Create")
+    //         {
+    //             var result = FileUpload.DeleteFile(imageName);
+    //         }
+    //         else
+    //         {
+    //             DeleteImageNames ??= new List<string>();
+    //             DeleteImageNames.Add(imageUrl);
+
+    //         }
+    //         HotelRoomModel.ImageUrls.RemoveAt(imageIndex);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         await JSRuntime.ToastrError(ex.Message);
+    //     }
+    // }
+
+
+    // private async Task HandleCsvUpload(InputFileChangeEventArgs e)
+    // {
+    //     var file = e.File;
+    //     if (file == null)
+    //     {
+    //         return;
+    //     }
+
+    //     using var stream = file.OpenReadStream();
+    //     using var reader = new StreamReader(stream);
+    //     using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture));
+
+    //     var contacts = csv.GetRecords<ContactsDTO>().ToList();
+
+    //     // Qui potresti voler validare o trasformare i dati se necessario
+
+    //     foreach (var contact in contacts)
+    //     {
+    //         await ContactsRepository.CreateContact(contact);
+    //     }
+    // }
+
+    // public async Task<int> BatchInsertContacts(IEnumerable<ContactsDTO> contacts)
+    // {
+    //     if (contacts is null)
+    //     {
+    //         throw new ArgumentNullException(nameof(contacts));
+    //     }
+    //     // La query e la logica dipenderanno dalla tua implementazione corrente.
+    //     // Ecco un esempio usando Dapper:
+
+    //     var query = "INSERT INTO Contacts (id, email, lastname,firstname,spiritual_name,country_of_residence,country_calculated,zip,profession,city,hs_language,do_you_speak_english_,comments,gender__,date_of_birth_date_picker,mobilephone,phone,verified_art_teacher,verified_knowledge_teachers,verified_music,verified_rituals_teacher,verified_yoga_and_meditation_teachers,verified_aky_teacher) VALUES (@id, @email, @lastname,@firstname,@spiritual_name,@country_of_residence,@country_calculated,@zip,@profession,@city,@hs_language,@do_you_speak_english_,@comments,gender__,@date_of_birth_date_picker,@mobilephone,@phone,@verified_art_teacher,@verified_knowledge_teachers,@verified_music,@verified_rituals_teacher,@verified_yoga_and_meditation_teachers,@verified_aky_teacher)";
+      
+    //         return await ExecuteAsync(query, contacts);
+        
+    // }
+
+    // private async Task HandleCsvUpload(InputFileChangeEventArgs e)
+    // {
+    //     var file = e.File;
+
+    //     if (file == null)
+    //         return;
+
+    //     using var stream = new MemoryStream();
+    //     await file.OpenReadStream().CopyToAsync(stream);
+    //     var content = Encoding.UTF8.GetString(stream.ToArray());
+
+    //     var lines = content.Split('\n');
+    //     if (lines.Length < 2) // Almeno header e una riga di dati
+    //         return;
+
+    //     var header = lines[0].Split(',');
+    //     var contacts = new List<ContactsDTO>();
+
+    //     for (var i = 1; i < lines.Length; i++)
+    //     {
+    //         var values = lines[i].Split(',');
+    //         if (values.Length != header.Length) // Dati mal formati
+    //             continue;
+
+    //         var contact = new ContactsDTO
+    //             {
+    //                 id = values[Array.IndexOf(header, "id")],
+    //                 email = values[Array.IndexOf(header, "email")],
+    //                 lastname = values[Array.IndexOf(header, "lastname")],
+    //                 firstname = values[Array.IndexOf(header, "firstname")],
+    //                 spiritual_name = values[Array.IndexOf(header, "spiritual_name")],
+    //                 country_of_residence = values[Array.IndexOf(header, "country_of_residence")],
+    //                 country_calculated = values[Array.IndexOf(header, "country_calculated")],
+    //                 zip = values[Array.IndexOf(header, "zip")],
+    //                 profession = values[Array.IndexOf(header, "profession")],
+    //                 city = values[Array.IndexOf(header, "city")],
+    //                 hs_language = values[Array.IndexOf(header, "hs_language")],
+    //                 do_you_speak_english_ = values[Array.IndexOf(header, "do_you_speak_english_")],
+    //                 comments = values[Array.IndexOf(header, "comments")],
+    //                 gender__ = values[Array.IndexOf(header, "gender__")],
+    //                 date_of_birth_date_picker = values[Array.IndexOf(header, "date_of_birth_date_picker")],
+    //                 mobilephone = values[Array.IndexOf(header, "mobilephone")],
+    //                 phone = values[Array.IndexOf(header, "phone")],
+    //                 verified_art_teacher = values[Array.IndexOf(header, "verified_art_teacher")],
+    //                 verified_knowledge_teachers = values[Array.IndexOf(header, "verified_knowledge_teachers")],
+    //                 verified_music = values[Array.IndexOf(header, "verified_music")],
+    //                 verified_rituals_teacher = values[Array.IndexOf(header, "verified_rituals_teacher")],
+    //                 verified_yoga_and_meditation_teachers = values[Array.IndexOf(header, "verified_yoga_and_meditation_teachers")],
+    //                 verified_aky_teacher = values[Array.IndexOf(header, "verified_aky_teacher")]
+    //             };
+
+    //         contacts.Add(contact);
+    //     }
+
+    //     await ContactsRepository.BatchInsertContacts(contacts);
+    // }
+
+}

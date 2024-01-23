@@ -1,0 +1,165 @@
+﻿@page "/Invoice"
+@using Radzen.Blazor
+@using Models
+@using Buisness.Repository.IRepository
+@inject ICoursesRepository CoursesRepository
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
+
+
+@using System.Linq.Dynamic.Core
+@using System.Linq
+@using System.Text;
+
+<div class="row">
+    <div class="col-md-2">
+        <!-- Logo dell'azienda -->
+        <RadzenImage Path="bhakti_marga_big.png" Style="width:150px; height:auto;" />
+    </div>
+    <div class="col-md-10">
+        <!-- Informazioni aziendali -->
+        <div>Bhakti Mar</div>
+        <div>Telefono Azienda</div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <!-- Dati Venditore -->
+        <div>Nome: [Nome Venditore]</div>
+        <div>Cognome: [Cognome Venditore]</div>
+        <div>Luogo: [Luogo]</div>
+        <div>Data: @DateTime.Now.ToShortDateString()</div>
+        <div>Prodotto: [Nome Prodotto]</div>
+    </div>
+</div>
+    <div>
+      @if (Courses1.Any())
+    {
+    <RadzenDataGrid Data="@Courses1" TItem="CoursesDTO">
+        <Columns>
+            <RadzenDataGridColumn TItem="CoursesDTO" Property="LineItemTitle" Title="Item" />
+            <RadzenDataGridColumn TItem="CoursesDTO" Property="Description" Title="Description" />
+            <!-- Altre colonne qui -->
+        </Columns>
+    </RadzenDataGrid>
+
+    <RadzenDataGrid Data="@Courses1" TItem="CoursesDTO">
+        <Columns>
+            <RadzenDataGridColumn TItem="CoursesDTO" Property="sku" Title="Fee" />
+            <RadzenDataGridColumn TItem="CoursesDTO" Property="transport" Title="Description" />
+            <!-- Altre colonne qui -->
+        </Columns>
+    </RadzenDataGrid>
+    }
+      else
+    {
+        <p>No Courses available.</p>
+    }
+    <div>
+        <!-- Riepilogo Totale -->
+        <RadzenCard>
+            <div>Sub total: [Subtotal]</div>
+            <div>Fees: [Fees]</div>
+            <div>Tax Rate: [TaxRate]</div>
+            <!-- Altre voci qui -->
+        </RadzenCard>
+    </div>
+ </div>
+
+@code{
+    string text = "Hi";
+    RadzenDataGrid<CoursesDTO> grid;
+    int count;
+    private string? Title { get; set; } = "No Title";
+    [Parameter]
+    public long? Id { get; set; }
+
+    private double? transport { get; set; } = 0;
+    private double? rent { get; set; } = 0;
+    private double? food { get; set; } = 0;
+    private double? other { get; set; } = 0;
+
+
+    // [Parameter]
+    // public long? Id { get; set; }
+
+    private IEnumerable<CoursesDTO> Courses1 { set; get; } = new List<CoursesDTO>();
+    private IEnumerable<CoursesDTO> Courses2 { set; get; } = new List<CoursesDTO>();
+
+
+    bool isLoading = false;
+
+    async Task ShowLoading()
+    {
+        isLoading = true;
+
+        await Task.Yield();
+
+        isLoading = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var allCourses = await CoursesRepository.GetAllCourses();
+
+            // Filtra per ProductId
+            Courses1 = allCourses.Where(course => course.ProductId == Id).ToList();
+            Courses2 = allCourses.Where(course => course.ProductId == Id).ToList();
+
+            // Estrai gli SKU unici
+            var skuUnici = Courses1.Select(c => c.sku).Distinct().ToList();
+
+            // Crea una lista temporanea per i nuovi DTO
+            var tempCourses = new List<CoursesDTO>();
+
+            foreach (var sku in skuUnici)
+            {
+                // Trova il primo corso con questo SKU per copiare alcune proprietà generali
+                var courseForSku = Courses1.FirstOrDefault(c => c.sku == sku);
+
+                if (courseForSku != null)
+                {
+                    var newCourse = new CoursesDTO
+                        {
+                            //Specific Sku Properties
+                            Id = courseForSku.Id,
+                            LineItemTitle = courseForSku.LineItemTitle,
+                            ProductId = courseForSku.ProductId,
+                            LineItemId = courseForSku.LineItemId,
+                            sku = sku,
+                            SkuUnici = skuUnici,
+                            LineItemPrice = courseForSku.LineItemPrice,
+                            DateTimeAdded = courseForSku.DateTimeAdded,
+                            Store = courseForSku.Store,
+                            TotalLineItemPriceSku = Courses1.Where(c => c.sku == sku).Sum(course => course.LineItemPrice),
+                            TotalStudentsSku = Courses1.Count(c => c.sku == sku),
+
+                            //General Properties
+                            TotalLineItemPrice = Courses1.Sum(course => course.LineItemPrice),
+                            TotalStudents = Courses1.Count(),
+                          
+                        };
+
+                    tempCourses.Add(newCourse);
+                }
+            }
+
+
+            // Assegna la lista temporanea a Courses1
+            Courses1 = tempCourses;
+
+   
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+    }
+
+            }

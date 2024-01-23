@@ -1,0 +1,128 @@
+﻿
+
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div >
+        <div class="d-flex justify-content-center">
+                <!-- Logo dell'azienda -->
+                <RadzenImage Path="bhakti_marga_big.png" Style="width:200px; height:auto;" />
+        </div>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+@*  <div class="@NavMenuCssClass">
+    <RadzenPanelMenu DisplayStyle="@DisplayStyle"  ShowArrow="@isShowArrow" Multiple=false>
+            <RadzenPanelMenuItem Text="General" Icon="home" href="" Match="NavLinkMatch.All">
+        </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="Countries List" Icon="list">
+        <RadzenPanelMenuItem Text="Teachers List" Path="Contacts-list" Icon="list">
+            <RadzenPanelMenuItem Text=" Events List" Path="Events-list" Icon="list">
+                <RadzenPanelMenuItem Text="Students List" Path="/Events-list/Students" Icon="list"></RadzenPanelMenuItem>
+            </RadzenPanelMenuItem>
+        </RadzenPanelMenuItem>
+        </RadzenPanelMenuItem>
+    </RadzenPanelMenu>
+</div>  *@
+
+<div class="@NavMenuCssClass" >
+
+    <nav class="flex-column" >
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+        <div class="nav-link">
+            Countries/Teachers Platform
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Countries-list">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Countries
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Contacts-list">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Teachers
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Events-list">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Courses
+            </NavLink>
+        </div>
+      
+         <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Students-list">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Students
+            </NavLink>
+        </div>
+        <div class="nav-link">
+            Hubspot List
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="AllContacts-list">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> All Contacts
+            </NavLink>
+        </div>
+        <div class="nav-link">
+            Become a Devotee Platform
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Request">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Request
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Waiting">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Waiting
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Initiated">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Initiated
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Rejected">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Rejected
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ExDevotee">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Ex Devotee
+            </NavLink>
+        </div>
+       @*  <div class=" px-3">
+            <RadzenPanelMenu DisplayStyle="@DisplayStyle" ShowArrow="@isShowArrow" Multiple=false >
+             
+                <RadzenPanelMenuItem Text="Country" Path="Countries-list" Icon="list">
+                    <RadzenPanelMenuItem Text="Teachers" Path="Contacts-list" Icon="list">
+                        <RadzenPanelMenuItem Text=" Courses" Path="Events-list" Icon="list">
+                            <RadzenPanelMenuItem Text="Students" Path="/Events-list/Students" Icon="list"></RadzenPanelMenuItem>
+                        </RadzenPanelMenuItem>
+                    </RadzenPanelMenuItem>
+                </RadzenPanelMenuItem>
+            </RadzenPanelMenu>
+        </div> *@
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private bool isShowArrow = true;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    MenuItemDisplayStyle DisplayStyle = MenuItemDisplayStyle.IconAndText;
+
+}
+}

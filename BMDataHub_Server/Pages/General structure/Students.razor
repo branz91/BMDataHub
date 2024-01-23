@@ -1,0 +1,172 @@
+﻿@page "/Students-list"
+@page "/Students-list/{Id:long}"
+@page "/Students-list/{Id:long}/{TitleCourse}"
+
+
+@using Models
+@using Buisness.Repository.IRepository
+@inject IStudentsRepository StudentsRepository
+@inject NavigationManager NavigationManager
+@using System.Linq.Dynamic.Core
+@attribute [Authorize(Roles = Common.SD.Role_Admin)]
+
+
+<div class="row mt-3">
+
+    <div class="col-8">
+        <RadzenText TextStyle="TextStyle.H4" style="color: var(--rz-primary-dark);"><strong>Students List:</strong><span style="color: var(--rz-secondary);" class="rz-text-capitalize">@Title</span> </RadzenText>
+
+    </div>
+
+    <div class="col-3 mb-3">
+        @if (TitleCourse != null && TitleCourse != "All")
+        {
+            <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to Courses" Click="@(() => NavigateTo($"/Events-list/{ThID}"))" Style="margin-left:5px"></RadzenButton>
+        }
+        else
+        {
+
+            <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to Courses" Click="@(() => NavigateTo($"/Events-list"))" Style="margin-left:5px"></RadzenButton>
+
+        }
+        @*    <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="Back to All the Courses" Click="@(() => NavigateTo("/Events-list"))"></RadzenButton>
+
+        <RadzenButton Shade="Shade.Lighter" ButtonStyle="ButtonStyle.Primary" Text="View All Students" Click="@ReloadPage" Style="margin-left:5px"></RadzenButton> *@
+
+    </div>
+    @if (Courses1.Any())
+    {
+
+
+        <RadzenDataGrid style="height: auto" Data="@Courses1" AllowPaging="true" PageSize="25" PagerHorizontalAlign="HorizontalAlign.Center" TItem="StudentsDTO" ColumnWidth="200px">
+            <Columns>
+
+                <RadzenDataGridColumn TItem="StudentsDTO" Frozen="false" Sortable="false" Filterable="false" Property="country" Title="country" Width="150px" TextAlign="TextAlign.Center" />
+
+                <RadzenDataGridColumn TItem="StudentsDTO" Property="lastname" Title="Name">
+                    <Template Context="student">
+                        @{
+                            int avatarNumber = new Random().Next(1, 21); // Genera un numero casuale per l'avatar
+                            string avatarPath = $"/Public/avatars/{avatarNumber}.png"; // Crea il percorso
+                        }
+                        <RadzenImage Path="@avatarPath" style="width: 40px; height: 40px; border-radius: 8px; margin-right: 8px; float: left;" />
+                        <RadzenText TextStyle="TextStyle.Subtitle2" class="mb-0">@student.firstname @student.lastname</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="StudentsDTO" Frozen="false" Sortable="false" Filterable="false" Property="email" Title="email" Width="200px" TextAlign="TextAlign.Center" />
+
+                    <RadzenDataGridColumn TItem="StudentsDTO" Frozen="false" Sortable="false" Filterable="false" Property="OrderName" Title="Order" Width="220px" TextAlign="TextAlign.Center">
+                    <Template Context="data">
+
+                        <div class="row">
+                            <div>created: @data.CreatedAt</div>
+                            <div>name: @data.OrderName</div>
+
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="StudentsDTO" Frozen="false" Sortable="false" Filterable="false" Property="LineItemPrice" Title="LineItemPrice" Width="200px" TextAlign="TextAlign.Center">
+                    <Template Context="data">
+
+                        <div class="row">
+                            <div>price: @data.LineItemPrice  €</div>
+                            <div>sku: @data.sku</div>
+                            <div>id: @data.LineItemId</div>
+
+                        </div>
+                    </Template>
+
+                </RadzenDataGridColumn>              
+            </Columns>
+        </RadzenDataGrid>
+    }
+    else
+    {
+        <p>No Students</p>
+    }
+</div>
+
+
+
+@code {
+    string text = "Hi";
+    RadzenDataGrid<StudentsDTO> grid;
+
+    private string? Title { get; set; } = "null";
+    private int? ThID { get; set; }
+
+    [Parameter]
+    public long? Id { get; set; }
+
+    [Parameter]
+    public string? TitleCourse { get; set; }
+
+    int count;
+
+
+    private IEnumerable<StudentsDTO> Courses1 { set; get; } = new List<StudentsDTO>();
+
+    // [CascadingParameter]
+    // public Task<AuthenticationState> AuthenticationState { get;set }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            //     var authenticationState = await AuthenticationState;
+            //     if (authenticationState.User.Identity.IsAuthenticated)
+            //     {
+            //         NavigationManager.NavigateTo("Identity/Account/login");
+            //     }
+            var allCourses = await StudentsRepository.GetAllStudents();
+
+
+            if (Id>0)
+            {
+
+                // Filtra per ProductId
+                Courses1 = allCourses.Where(course => course.ProductId == Id).ToList();
+
+                Title = " "+Courses1.First().LineItemTitle.ToLower();
+                ThID = Courses1.FirstOrDefault().IdTeacher;
+
+                // Aggiorna lo stato del componente
+                StateHasChanged();
+            }
+            else
+            {
+                Courses1 = allCourses.ToList();
+                Title =" All Students";
+
+                StateHasChanged();
+
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Gestione dell'errore
+            Console.WriteLine($"Si è verificato un errore: {ex.Message}");
+        }
+    }
+
+
+    private void ReloadPage()
+    {
+        NavigationManager.NavigateTo("/Students-list", true);
+    }
+
+
+    private void NavigateTo(string url)
+    {
+        // Assicurati di avere NavigationManager iniettato nel tuo componente
+        NavigationManager.NavigateTo(url);
+    }
+
+
+}
+
+ 
